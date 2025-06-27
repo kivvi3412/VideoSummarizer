@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能视频内容分析工具</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    {% csrf_token %}
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1 class="app-title">视频总结器</h1>
+<!--                <p class="app-subtitle">智能视频内容分析工具</p>-->
+            </div>
+
+            <!-- New Task Section -->
+            <div class="task-creation">
+                <h2 class="section-title">新建任务</h2>
+                
+                <!-- URL Input -->
+                <div class="input-group">
+                    <label class="input-label">视频链接</label>
+                    <div class="url-input-container">
+                        <input type="url" id="videoUrl" class="input-field" placeholder="https://www.youtube.com/watch?v=...">
+                        <button id="addUrlTask" class="add-button">添加</button>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div class="input-group">
+                    <label class="input-label">音频文件</label>
+                    <div class="file-input-container">
+                        <input type="file" id="audioFile" class="file-input" accept="audio/*,video/*">
+                        <label for="audioFile" class="file-input-label">
+                            <span class="file-input-text">选择文件</span>
+                            <span class="file-input-status">未选择文件</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task List -->
+            <div class="task-list">
+                <h2 class="section-title">任务列表</h2>
+                <div id="taskList" class="task-items">
+                    <!-- Tasks will be loaded here -->
+                </div>
+            </div>
+
+            <!-- Settings Button -->
+            <div class="sidebar-footer">
+                <button id="settingsButton" class="settings-button">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 1v6m0 10v6m11-7h-6m-10 0H1m15.5-6.5l-4.24 4.24M7.76 7.76L3.52 3.52m12.96 12.96l-4.24-4.24M7.76 16.24L3.52 20.48"></path>
+                    </svg>
+                    设置
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <div class="tab-buttons">
+                    <button id="summaryTab" class="tab-button active">总结</button>
+                    <button id="originalTab" class="tab-button">原始文本</button>
+                </div>
+            </div>
+
+            <div class="content-body">
+                <div id="summaryContent" class="content-panel active">
+                    <div class="welcome-message">
+                        <div class="welcome-icon">🎬</div>
+                        <h2>欢迎使用智能视频内容分析工具</h2>
+                        <p>选择左侧的视频链接或上传音频文件开始分析</p>
+                    </div>
+                </div>
+                
+                <div id="originalContent" class="content-panel">
+                    <div class="welcome-message">
+                        <div class="welcome-icon">📄</div>
+                        <h2>原始转录文本</h2>
+                        <p>完成任务后，这里将显示原始的转录文本</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>系统设置</h2>
+                <button id="closeSettings" class="close-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- OpenAI Configuration -->
+                <div class="settings-section">
+                    <h3 class="settings-title">OpenAI 配置</h3>
+                    <div class="setting-item">
+                        <label for="openaiApiKey" class="setting-label">API Key</label>
+                        <input type="password" id="openaiApiKey" class="setting-input" placeholder="sk-...">
+                    </div>
+                    <div class="setting-item">
+                        <label for="openaiBaseUrl" class="setting-label">Base URL</label>
+                        <input type="url" id="openaiBaseUrl" class="setting-input" placeholder="https://api.openai.com/v1">
+                    </div>
+                    <div class="setting-item">
+                        <label for="openaiModel" class="setting-label">模型</label>
+                        <input type="text" id="openaiModel" class="setting-input" placeholder="gpt-4o-mini">
+                    </div>
+                </div>
+
+                <!-- Whisper Configuration -->
+                <div class="settings-section">
+                    <h3 class="settings-title">Whisper 配置</h3>
+                    <div class="setting-item">
+                        <label for="whisperModel" class="setting-label">模型大小</label>
+                        <select id="whisperModel" class="setting-select">
+                            <option value="tiny">tiny</option>
+                            <option value="base">base</option>
+                            <option value="small">small</option>
+                            <option value="medium">medium</option>
+                            <option value="large">large </option>
+                            <option value="turbo">turbo</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label for="whisperDevice" class="setting-label">计算设备</label>
+                        <select id="whisperDevice" class="setting-select">
+                            <option value="auto">自动</option>
+                            <option value="cpu">CPU</option>
+                            <option value="cuda">CUDA</option>
+                        </select>
+                    </div>
+                    <div class="setting-item">
+                        <label class="setting-label">
+                            <input type="checkbox" id="autoLoadModel" class="setting-checkbox">
+                            动态加载模型
+                        </label>
+                        <small class="setting-hint">启用后，有任务时自动加载模型，任务完成后自动卸载以节省显存</small>
+                    </div>
+                    <div class="model-controls">
+                        <button id="loadModel" class="control-button">加载模型</button>
+                        <button id="unloadModel" class="control-button secondary">卸载模型</button>
+                        <div id="modelStatus" class="model-status">模型状态: 未加载</div>
+                    </div>
+                </div>
+
+                <!-- Prompt Configuration -->
+                <div class="settings-section">
+                    <h3 class="settings-title">提示词配置</h3>
+                    <div class="setting-item">
+                        <label for="summaryPrompt" class="setting-label">音频总结提示词</label>
+                        <textarea id="summaryPrompt" class="setting-textarea" rows="3" placeholder="总结录音，简体中文回答"></textarea>
+                    </div>
+                    <div class="setting-item">
+                        <label for="urlSummaryPrompt" class="setting-label">URL总结提示词</label>
+                        <textarea id="urlSummaryPrompt" class="setting-textarea" rows="3" placeholder="本次录音的标题是{title}，简要回答标题的问题，并且总结录音，简体中文回答"></textarea>
+                        <small class="setting-hint">提示：使用{title}作为视频标题的占位符</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button id="saveSettings" class="save-button">保存设置</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Floating Button -->
+    <div id="mobileTaskButton" class="mobile-task-button">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+    </div>
+
+    <!-- Mobile Task Overlay -->
+    <div id="mobileTaskOverlay" class="mobile-task-overlay">
+        <div class="mobile-task-content">
+            <div class="mobile-task-header">
+                <h2>新建任务</h2>
+                <button id="closeMobileTask" class="close-button">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="mobile-task-body">
+                <!-- URL Input -->
+                <div class="input-group">
+                    <label class="input-label">视频链接</label>
+                    <div class="url-input-container">
+                        <input type="url" id="mobileVideoUrl" class="input-field" placeholder="https://www.youtube.com/watch?v=...">
+                        <button id="addMobileUrlTask" class="add-button">添加</button>
+                    </div>
+                </div>
+
+                <!-- File Upload -->
+                <div class="input-group">
+                    <label class="input-label">音频文件</label>
+                    <div class="file-input-container">
+                        <input type="file" id="mobileAudioFile" class="file-input" accept="audio/*,video/*">
+                        <label for="mobileAudioFile" class="file-input-label">
+                            <span class="file-input-text">选择文件</span>
+                            <span class="file-input-status">未选择文件</span>
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">处理中...</div>
+    </div>
+
+    <!-- Mobile Bottom Navigation -->
+    <div id="mobileBottomNav" class="mobile-bottom-nav">
+        <div class="mobile-nav-item" id="mobileNavAdd" data-tab="add">
+            <div class="mobile-nav-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+            </div>
+            <span class="mobile-nav-label">添加任务</span>
+        </div>
+        
+        <div class="mobile-nav-item" id="mobileNavTasks" data-tab="tasks">
+            <div class="mobile-nav-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M9 11H15"></path>
+                    <path d="M9 15H15"></path>
+                    <path d="M3 6H21"></path>
+                    <path d="M3 18H21"></path>
+                </svg>
+            </div>
+            <span class="mobile-nav-label">任务进度</span>
+        </div>
+        
+        <div class="mobile-nav-item" id="mobileNavSummary" data-tab="summary">
+            <div class="mobile-nav-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14,2 14,8 20,8"></polyline>
+                    <line x1="16" y1="13" x2="8" y2="13"></line>
+                    <line x1="16" y1="17" x2="8" y2="17"></line>
+                    <polyline points="10,9 9,9 8,9"></polyline>
+                </svg>
+            </div>
+            <span class="mobile-nav-label">总结信息</span>
+        </div>
+    </div>
+
+    <!-- Mobile Add Task Page -->
+    <div id="mobileAddPage" class="mobile-page">
+        <div class="mobile-page-header">
+            <h2>添加任务</h2>
+        </div>
+        <div class="mobile-page-content">
+            <div class="input-group">
+                <label class="input-label">视频链接</label>
+                <div class="url-input-container">
+                    <input type="url" id="mobileVideoUrlInput" class="input-field" placeholder="https://www.youtube.com/watch?v=...">
+                    <button id="addMobileUrlBtn" class="add-button">添加</button>
+                </div>
+                <button id="clipboardImportBtn" class="clipboard-button">📋 从剪切板导入并执行</button>
+            </div>
+
+            <div class="input-group">
+                <label class="input-label">音频文件</label>
+                <div class="file-input-container">
+                    <input type="file" id="mobileAudioFileInput" class="file-input" accept="audio/*,video/*">
+                    <label for="mobileAudioFileInput" class="file-input-label">
+                        <span class="file-input-text">选择文件</span>
+                        <span class="file-input-status">未选择文件</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Tasks Page -->
+    <div id="mobileTasksPage" class="mobile-page">
+        <div class="mobile-page-header">
+            <h2>任务进度</h2>
+        </div>
+        <div class="mobile-page-content">
+            <div id="mobileTasksList" class="mobile-tasks-list">
+                <!-- Tasks will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Summary Page -->
+    <div id="mobileSummaryPage" class="mobile-page">
+        <div class="mobile-page-header">
+            <h2>总结信息</h2>
+            <div class="mobile-summary-tabs">
+                <button id="mobileSummaryTabBtn" class="mobile-tab-button active">总结</button>
+                <button id="mobileOriginalTabBtn" class="mobile-tab-button">原文</button>
+            </div>
+        </div>
+        <div class="mobile-page-content">
+            <div id="mobileSummaryContent" class="mobile-summary-content active">
+                <div class="mobile-welcome-message">
+                    <div class="welcome-icon">🎬</div>
+                    <h3>请先添加并选择任务</h3>
+                    <p>点击底部"添加任务"开始，完成后选择任务查看总结</p>
+                </div>
+            </div>
+            <div id="mobileOriginalContent" class="mobile-summary-content">
+                <div class="mobile-welcome-message">
+                    <div class="welcome-icon">📄</div>
+                    <h3>原始转录文本</h3>
+                    <p>选择已完成的任务后，这里将显示原始转录文本</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/js/app.js"></script>
+</body>
+</html>
