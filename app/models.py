@@ -66,7 +66,7 @@ class VideoTask(models.Model):
     error_message = models.TextField(blank=True)
 
     # Metadata
-    video_id = models.CharField(max_length=100, blank=True)
+    video_id = models.CharField(max_length=100, blank=True, null=True, default='')
     duration = models.IntegerField(null=True, blank=True)  # in seconds
 
     created_at = models.DateTimeField(auto_now_add=True)

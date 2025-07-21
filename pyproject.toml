@@ -1,0 +1,22 @@
+[project]
+name = "VideoSummarizer"
+version = "1.0.0"
+description = "Django-based video summarizer using AI"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "Django==4.2.7",
+    "django-cors-headers==4.3.1",
+    "djangorestframework==3.14.0",
+    "torch",
+    "openai-whisper",
+    "yt-dlp",
+    "openai",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
